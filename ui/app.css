@@ -173,9 +173,13 @@ legend {
 
 /* ---- page ------------------------------------------------------------- */
 
-main {
+main,
+.view {
   display: grid;
   gap: var(--s4);
+}
+
+main {
   width: min(100%, 1080px);
   margin: 0 auto;
   padding: var(--s5);
@@ -353,6 +357,7 @@ main {
 }
 
 .effects h2,
+.card h2,
 .field > label,
 .field > legend {
   color: var(--text-dim);
@@ -613,14 +618,14 @@ select {
   cursor: default;
 }
 
-.paint-actions {
+.actions {
   display: flex;
   align-items: center;
   gap: var(--s3);
   margin-top: var(--s4);
 }
 
-.paint-status {
+.actions-status {
   margin-right: auto;
   color: var(--text-dim);
   font-size: var(--fs-sm);
@@ -666,4 +671,93 @@ select {
 
 .kb-keys[inert] {
   opacity: 1;
+}
+
+/* ---- mouse view ------------------------------------------------------- */
+
+.mouse {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.mouse-side {
+  display: grid;
+  gap: var(--s4);
+}
+
+.card {
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.hint {
+  color: var(--text-faint);
+  font-size: var(--fs-sm);
+}
+
+.dpi-rows {
+  display: grid;
+  gap: var(--s2);
+}
+
+.dpi-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 52px auto;
+  gap: var(--s3);
+  align-items: center;
+  min-height: var(--control-h);
+}
+
+.dpi-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  cursor: pointer;
+}
+
+.dpi-pick input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.dpi-row output {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.dpi-row .switch {
+  grid-column: auto;
+}
+
+.dpi-row[data-off] input[type="range"],
+.dpi-row[data-off] output {
+  opacity: 0.4;
+}
+
+.button-rows {
+  display: grid;
+  gap: var(--s2);
+}
+
+.button-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.button-row > select {
+  grid-column: auto;
+}
+
+@media (max-width: 860px) {
+  .mouse {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

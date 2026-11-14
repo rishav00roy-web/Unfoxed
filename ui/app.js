@@ -247,7 +247,7 @@ function stillColors() {
   return keys.map((k) => (saved ? saved[k.slot] : null));
 }
 
-const animated = () => S.tab === 'effects' && S.connected && !!S.lighting
+const animated = () => activeDevice === 'keyboard' && S.tab === 'effects' && S.connected && !!S.lighting
   && S.lighting.brightness > 0 && S.lighting.mode !== MODE_CUSTOM;
 
 function renderKeyboard() {
@@ -520,14 +520,30 @@ async function showTab(name) {
 
 /* ---- connection -------------------------------------------------------- */
 
+/* The chip in the top bar shows the device whose view is open. */
+const deviceStatus = {
+  keyboard: [false, 'Looking for keyboard\u2026'],
+  mouse: [false, 'Looking for mouse\u2026'],
+};
+let activeDevice = 'keyboard';
+
+function setDeviceStatus(kind, connected, text) {
+  deviceStatus[kind] = [connected, text];
+  showDevice(activeDevice);
+}
+
+function showDevice(kind) {
+  activeDevice = kind;
+  const [connected, text] = deviceStatus[kind];
+  $('device').dataset.state = connected ? 'on' : 'off';
+  $('device-text').textContent = text;
+}
+
 function applyState(state, seq) {
   const was = S.connected;
   S.connected = !!state.connected;
-  const device = $('device');
-  device.dataset.state = S.connected ? 'on' : 'off';
-  $('device-text').textContent = S.connected
-    ? 'Ronin Wireless connected'
-    : (state.error || 'Keyboard not found');
+  setDeviceStatus('keyboard', S.connected,
+    S.connected ? 'Ronin Wireless connected' : (state.error || 'Keyboard not found'));
   for (const id of ['panel-effects', 'panel-paint']) $(id).inert = !S.connected;
   $('profiles').disabled = !S.connected;
 

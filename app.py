@@ -1,6 +1,6 @@
-"""Unfoxed: a small local app for the EvoFox Ronin Wireless keyboard.
+"""Unfoxed: a small local app for the EvoFox Ronin Wireless keyboard and Blaze 2 mouse.
 
-Runs a loopback-only HTTP server that serves the UI and talks to the keyboard,
+Runs a loopback-only HTTP server that serves the UI and talks to the devices,
 then shows the UI in a native window.
 
     python app.py            open the app window
@@ -18,7 +18,9 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import evision
+import mouse
 from evision import DeviceError
+from mouse import MouseError
 
 # Packaged as a single .exe, the bundled files are unpacked to sys._MEIPASS.
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
@@ -28,9 +30,16 @@ STATIC = {
     "/app.css": "text/css",
     "/app.js": "text/javascript",
     "/effects.js": "text/javascript",
+    "/mouse.js": "text/javascript",
 }
 
 kb = evision.Keyboard()
+ms = mouse.Mouse()
+MOUSE_OPTIONS = {
+    "dpi": mouse.DPI_VALUES,
+    "polling": sorted(mouse.POLLING_BYTE),
+    "functions": [[code, name] for code, name in mouse.FUNCTIONS.items()],
+}
 TOKEN = secrets.token_urlsafe(24)
 preview_on = threading.Event()
 
@@ -46,6 +55,32 @@ def read_state():
         }
     except DeviceError as exc:
         return {"connected": False, "error": str(exc)}
+
+
+def read_mouse():
+    try:
+        ms.connect()
+        state = ms.get_state()
+        state["connected"] = True
+    except MouseError as exc:
+        state = {"connected": False, "error": str(exc)}
+    state["options"] = MOUSE_OPTIONS
+    return state
+
+
+def clean_mouse(body):
+    out = {}
+    if body.get("dpi") is not None:
+        out["dpi"] = [int(v) for v in body["dpi"]]
+    if body.get("enabled") is not None:
+        out["enabled"] = [bool(v) for v in body["enabled"]]
+    if body.get("current") is not None:
+        out["current"] = int(body["current"])
+    if body.get("polling") is not None:
+        out["polling"] = int(body["polling"])
+    if body.get("buttons") is not None:
+        out["buttons"] = [int(v) for v in body["buttons"]]
+    return out
 
 
 def end_preview():
@@ -130,6 +165,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if url.path == "/api/state":
                 return self._send(200, read_state())
+            if url.path == "/api/mouse":
+                return self._send(200, read_mouse())
             if url.path == "/api/layout":
                 return self._send(200, (ROOT / "layout.json").read_bytes())
             if url.path == "/api/custom":
@@ -138,7 +175,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("set out of range")
                 kb.connect()
                 return self._send(200, {"set": index, "colors": kb.get_custom(index)})
-        except DeviceError as exc:
+        except (DeviceError, MouseError) as exc:
             return self._send(503, {"error": str(exc)})
         except (ValueError, KeyError, TypeError) as exc:
             return self._send(400, {"error": str(exc)})
@@ -149,6 +186,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(403, {"error": "forbidden"})
         try:
             body = self._body()
+            if self.path == "/api/mouse":
+                ms.connect()
+                ms.apply(**clean_mouse(body))
+                return self._send(200, read_mouse())
             kb.connect()
             if self.path == "/api/profile":
                 end_preview()
@@ -180,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/preview/end":
                 end_preview()
                 return self._send(200, {"ok": True})
-        except DeviceError as exc:
+        except (DeviceError, MouseError) as exc:
             return self._send(503, {"error": str(exc)})
         except (ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
             return self._send(400, {"error": str(exc)})
@@ -232,6 +273,7 @@ def main():
     finally:
         end_preview()
         kb.close()
+        ms.close()
         server.server_close()
 
 

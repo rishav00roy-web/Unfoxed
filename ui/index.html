@@ -12,6 +12,12 @@
   <header class="topbar">
     <h1 class="brand">Unfoxed</h1>
 
+    <fieldset class="segmented" id="devices">
+      <legend class="visually-hidden">Device</legend>
+      <label><input type="radio" name="device" value="keyboard" checked><span>Keyboard</span></label>
+      <label><input type="radio" name="device" value="mouse"><span>Mouse</span></label>
+    </fieldset>
+
     <p class="device" id="device" role="status">
       <span class="device-dot" aria-hidden="true"></span>
       <span id="device-text">Looking for keyboard…</span>
@@ -26,6 +32,7 @@
   </header>
 
   <main>
+    <div class="view" id="view-keyboard">
     <section class="stage" aria-label="Keyboard preview">
       <div class="kb" id="kb">
         <div class="kb-inner" id="kb-inner">
@@ -106,17 +113,50 @@
         </div>
       </div>
 
-      <div class="paint-actions">
-        <p class="paint-status" id="paint-status" role="status"></p>
+      <div class="actions">
+        <p class="actions-status" id="paint-status" role="status"></p>
         <button type="button" class="btn" id="paint-revert">Revert</button>
         <button type="button" class="btn btn-primary" id="paint-save">Save to keyboard</button>
       </div>
     </section>
+    </div>
+
+    <div class="view" id="view-mouse" hidden>
+      <div id="mouse-body">
+        <div class="mouse">
+          <section class="card" aria-labelledby="dpi-title">
+            <h2 id="dpi-title">DPI</h2>
+            <p class="hint">Choose the slot to use now. The DPI button on the mouse steps through the slots that are on.</p>
+            <div class="dpi-rows" id="dpi-rows" role="radiogroup" aria-label="Slot in use"></div>
+          </section>
+
+          <div class="mouse-side">
+            <section class="card">
+              <fieldset class="field segmented" id="polling">
+                <legend>Polling rate</legend>
+              </fieldset>
+            </section>
+
+            <section class="card" aria-labelledby="buttons-title">
+              <h2 id="buttons-title">Buttons</h2>
+              <div class="button-rows" id="button-rows"></div>
+            </section>
+          </div>
+        </div>
+
+        <div class="actions">
+          <p class="actions-status" id="mouse-status" role="status"></p>
+          <button type="button" class="btn" id="mouse-revert">Revert</button>
+          <button type="button" class="btn btn-primary" id="mouse-apply">Apply to mouse</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <div class="toast" id="toast" role="alert" hidden></div>
 
   <script src="/effects.js" defer></script>
   <script src="/app.js" defer></script>
+  <script src="/mouse.js" defer></script>
 </body>
 </html>
