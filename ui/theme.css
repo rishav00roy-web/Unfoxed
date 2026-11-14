@@ -1,0 +1,96 @@
+/* The single place for shared values. Everything in app.css reads from here. */
+
+@property --glow {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.8;
+}
+
+:root {
+  color-scheme: dark light;
+
+  /* surfaces */
+  --bg: #111213;
+  --surface: #191b1d;
+  --surface-raised: #212427;
+  --line: #2d3135;
+  --line-strong: #3d4247;
+
+  /* text */
+  --text: #ecedee;
+  --text-dim: #a1a7ae;
+  --text-faint: #7d848c;
+
+  /* accent */
+  --accent: #ff8b3d;
+  --accent-ink: #1d0e02;
+  --accent-soft: rgb(255 139 61 / 0.14);
+  --ok: #58d08a;
+  --warn: #ffb547;
+
+  /* keyboard */
+  --stage: #0b0c0d;
+  --case: #1d1f22;
+  --case-edge: #2b2e32;
+  --key: #2a2d31;
+  --key-edge: #3a3e43;
+  --key-ink: #c4c9cf;
+  --key-ink-on-light: #14161a;
+  --key-ink-on-dark: #f4f5f6;
+
+  /* spacing, base 4 */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* radius */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-full: 999px;
+
+  /* type */
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 17px;
+  --lh: 1.45;
+
+  /* controls */
+  --control-h: 36px;
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --fast: 140ms;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f2f1ed;
+    --surface: #ffffff;
+    --surface-raised: #f7f6f2;
+    --line: #e0ded7;
+    --line-strong: #c9c6bd;
+
+    --text: #1b1c1e;
+    --text-dim: #5a5f66;
+    --text-faint: #7b8088;
+
+    --accent: #c9530a;
+    --accent-ink: #ffffff;
+    --accent-soft: rgb(201 83 10 / 0.1);
+    --ok: #1f8f52;
+    --warn: #a86200;
+
+    --stage: #e4e2dc;
+    --case: #fbfaf8;
+    --case-edge: #d5d2ca;
+    --key: #eceae5;
+    --key-edge: #d3d0c8;
+    --key-ink: #4a4f56;
+  }
+}

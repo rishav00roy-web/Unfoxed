@@ -1,1 +1,62 @@
 # Unfoxed
+
+An unofficial, open replacement for the EvoFox keyboard software. It talks to
+the keyboard directly, so the vendor app does not need to be installed.
+
+Not affiliated with or endorsed by EvoFox or Amkette.
+
+## Supported devices
+
+| Device | USB ID | Status |
+|---|---|---|
+| EvoFox Ronin Wireless keyboard (2.4G receiver) | `320F:5055` | Lighting, profiles, per-key colours |
+| EvoFox Blaze 2 mouse | `30FA:1440` | Not supported yet |
+
+Other keyboards built on the same Evision chip and "V2" protocol may work, but
+only the Ronin has been tested, and the key layout is the Ronin's.
+
+## What it does
+
+- **Effects**: all 18 built-in lighting effects, with the brightness, speed,
+  direction and colour controls each effect actually has
+- **Animated preview**: an on-screen keyboard that simulates the chosen effect.
+  Effects that react to typing respond to your key presses
+- **Per-key colours**: paint keys by clicking or dragging, fill groups (WASD,
+  arrows, F keys and so on), watch the real keyboard follow live, then save to
+  one of seven layouts stored on the keyboard
+- **Profiles**: switch between the keyboard's three onboard profiles
+
+Everything is stored on the keyboard, so settings stay after the app is closed.
+
+Not there yet: key remapping, macros, the mouse.
+
+## Run
+
+Windows, Python 3.10 or newer.
+
+    pip install -r requirements.txt
+    python app.py
+
+Or double-click `Unfoxed.bat`.
+
+Close the vendor app first. Two programs talking to the keyboard at once
+confuse each other.
+
+## How it works
+
+- `evision.py` is the driver. It speaks the Evision "V2" HID protocol on the
+  receiver's vendor interface (usage page `0xFF1C`). The packet format and the
+  layout of the keyboard's memory are documented at the top of the file.
+- `app.py` serves the UI on a loopback-only port and opens it in a native window.
+- `ui/` is the interface. `ui/effects.js` holds the preview simulations.
+- `layout.json` maps each key to its position and LED slot.
+
+The effect previews are reconstructions. The firmware cannot be read, so each
+one is rebuilt from the effect's name and controls. They show what a setting
+does; they are not a frame-accurate copy of the keyboard.
+
+## Credits
+
+The protocol was worked out with the help of the
+[OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) project's Evision
+keyboard notes, plus probing this keyboard directly.

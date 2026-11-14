@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="token" content="{{TOKEN}}">
+  <title>Unfoxed</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">Unfoxed</h1>
+
+    <p class="device" id="device" role="status">
+      <span class="device-dot" aria-hidden="true"></span>
+      <span id="device-text">Looking for keyboard…</span>
+    </p>
+
+    <fieldset class="segmented" id="profiles">
+      <legend>Profile</legend>
+      <label><input type="radio" name="profile" value="0"><span>1</span></label>
+      <label><input type="radio" name="profile" value="1"><span>2</span></label>
+      <label><input type="radio" name="profile" value="2"><span>3</span></label>
+    </fieldset>
+  </header>
+
+  <main>
+    <section class="stage" aria-label="Keyboard preview">
+      <div class="kb" id="kb">
+        <div class="kb-inner" id="kb-inner">
+          <div class="kb-keys" id="kb-keys"></div>
+          <div class="kb-knob" aria-hidden="true"></div>
+          <div class="kb-screen" aria-hidden="true"><span id="kb-screen-text">P1</span></div>
+        </div>
+      </div>
+      <p class="stage-note" id="stage-note"></p>
+    </section>
+
+    <div class="tabs" role="tablist" aria-label="Lighting">
+      <button role="tab" id="tab-effects" aria-controls="panel-effects" aria-selected="true">Effects</button>
+      <button role="tab" id="tab-paint" aria-controls="panel-paint" aria-selected="false" tabindex="-1">Per-key colours</button>
+    </div>
+
+    <section class="panel" id="panel-effects" role="tabpanel" aria-labelledby="tab-effects">
+      <div class="effects" id="effects"></div>
+
+      <form class="controls" id="controls" autocomplete="off">
+        <div class="field">
+          <label for="brightness">Brightness</label>
+          <output for="brightness" id="brightness-out">100%</output>
+          <input type="range" id="brightness" min="0" max="4" step="1" value="4">
+        </div>
+
+        <div class="field" id="field-speed">
+          <label for="speed">Speed</label>
+          <output for="speed" id="speed-out">Fast</output>
+          <input type="range" id="speed" min="0" max="4" step="1" value="2">
+        </div>
+
+        <fieldset class="field segmented" id="field-direction">
+          <legend>Direction</legend>
+          <label><input type="radio" name="direction" value="1"><span id="dir-a">Left</span></label>
+          <label><input type="radio" name="direction" value="0"><span id="dir-b">Right</span></label>
+        </fieldset>
+
+        <fieldset class="field" id="field-color">
+          <legend>Colour</legend>
+          <label class="switch">
+            <input type="checkbox" id="rainbow">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span>Rainbow</span>
+          </label>
+          <div class="swatches" id="swatches" role="group" aria-label="Colour presets"></div>
+        </fieldset>
+
+        <fieldset class="field" id="field-variant" hidden>
+          <legend>Variant</legend>
+          <div class="chips" id="variants"></div>
+        </fieldset>
+      </form>
+    </section>
+
+    <section class="panel" id="panel-paint" role="tabpanel" aria-labelledby="tab-paint" hidden>
+      <div class="paint">
+        <fieldset class="field segmented" id="tools">
+          <legend>Tool</legend>
+          <label><input type="radio" name="tool" value="paint" checked><span>Paint</span></label>
+          <label><input type="radio" name="tool" value="erase"><span>Erase</span></label>
+          <label><input type="radio" name="tool" value="pick"><span>Pick colour</span></label>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Brush colour</legend>
+          <div class="swatches" id="brush-swatches" role="group" aria-label="Brush colour presets"></div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Fill a group</legend>
+          <div class="chips" id="groups"></div>
+        </fieldset>
+
+        <div class="field">
+          <label for="paint-set">Layout</label>
+          <select id="paint-set"></select>
+        </div>
+      </div>
+
+      <div class="paint-actions">
+        <p class="paint-status" id="paint-status" role="status"></p>
+        <button type="button" class="btn" id="paint-revert">Revert</button>
+        <button type="button" class="btn btn-primary" id="paint-save">Save to keyboard</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="alert" hidden></div>
+
+  <script src="/effects.js" defer></script>
+  <script src="/app.js" defer></script>
+</body>
+</html>
