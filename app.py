@@ -20,7 +20,8 @@ from urllib.parse import parse_qs, urlparse
 import evision
 from evision import DeviceError
 
-ROOT = Path(__file__).resolve().parent
+# Packaged as a single .exe, the bundled files are unpacked to sys._MEIPASS.
+ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 UI = ROOT / "ui"
 STATIC = {
     "/theme.css": "text/css",
@@ -186,6 +187,12 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(404, {"error": "not found"})
 
 
+def say(text):
+    """Print, unless there is no console (the packaged app has none)."""
+    if sys.stdout is not None:
+        print(text, flush=True)
+
+
 def free_port():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -205,7 +212,7 @@ def main():
 
     try:
         if args.serve:
-            print(f"Unfoxed running at {url}", flush=True)
+            say(f"Unfoxed running at {url}")
             server.serve_forever()
         else:
             threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -214,7 +221,7 @@ def main():
             except ImportError:
                 import webbrowser
                 webbrowser.open(url)
-                print(f"Unfoxed running at {url} (close this window to quit)")
+                say(f"Unfoxed running at {url} (close this window to quit)")
                 threading.Event().wait()
             else:
                 webview.create_window("Unfoxed", url, width=1160, height=860,

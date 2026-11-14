@@ -30,7 +30,19 @@ Everything is stored on the keyboard, so settings stay after the app is closed.
 
 Not there yet: key remapping, macros, the mouse.
 
-## Run
+## Download
+
+Get `Unfoxed.exe` from the
+[latest release](https://github.com/rishav00roy-web/Unfoxed/releases/latest)
+and double-click it. Nothing to install; Python is not needed.
+
+Windows may warn that the file is from an unknown publisher, because it is not
+code-signed. Choose **More info**, then **Run anyway**.
+
+Close the vendor app first. Two programs talking to the keyboard at once
+confuse each other.
+
+## Run from source
 
 Windows, Python 3.10 or newer.
 
@@ -39,8 +51,8 @@ Windows, Python 3.10 or newer.
 
 Or double-click `Unfoxed.bat`.
 
-Close the vendor app first. Two programs talking to the keyboard at once
-confuse each other.
+To build the `.exe` yourself, `pip install pyinstaller` and run `build.bat`.
+The result is `dist\Unfoxed.exe`.
 
 ## How it works
 
