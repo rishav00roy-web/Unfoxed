@@ -31,7 +31,11 @@ STATIC = {
     "/app.js": "text/javascript",
     "/effects.js": "text/javascript",
     "/mouse.js": "text/javascript",
+    "/keys.js": "text/javascript",
 }
+
+LAYOUT = json.loads((ROOT / "layout.json").read_text(encoding="utf-8"))
+REMAP_SLOTS = {key["slot"] for key in LAYOUT["keys"]} | {extra["slot"] for extra in LAYOUT["extras"]}
 
 kb = evision.Keyboard()
 ms = mouse.Mouse()
@@ -81,6 +85,24 @@ def clean_mouse(body):
     if body.get("buttons") is not None:
         out["buttons"] = [int(v) for v in body["buttons"]]
     return out
+
+
+def read_keymap():
+    kb.connect()
+    profile = kb.get_profile()
+    return {"profile": profile, "keys": kb.get_keymap(profile)}
+
+
+def clean_keys(body):
+    changes = {}
+    for slot, code in dict(body["changes"]).items():
+        slot, code = int(slot), int(code)
+        if slot not in REMAP_SLOTS:
+            raise ValueError("That key cannot be changed")
+        if not 0 <= code <= 0xFFFFFF or code >> 16 not in (0x20, 0x30):
+            raise ValueError("Unsupported key function")
+        changes[slot] = code
+    return changes
 
 
 def end_preview():
@@ -167,6 +189,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, read_state())
             if url.path == "/api/mouse":
                 return self._send(200, read_mouse())
+            if url.path == "/api/keymap":
+                return self._send(200, read_keymap())
             if url.path == "/api/layout":
                 return self._send(200, (ROOT / "layout.json").read_bytes())
             if url.path == "/api/custom":
@@ -191,6 +215,9 @@ class Handler(BaseHTTPRequestHandler):
                 ms.apply(**clean_mouse(body))
                 return self._send(200, read_mouse())
             kb.connect()
+            if self.path == "/api/keymap":
+                kb.set_keys(kb.get_profile(), clean_keys(body))
+                return self._send(200, read_keymap())
             if self.path == "/api/profile":
                 end_preview()
                 kb.set_profile(int(body["profile"]))

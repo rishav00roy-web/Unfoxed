@@ -73,6 +73,8 @@ const GROUPS = [
 
 /* ---- state ------------------------------------------------------------- */
 
+const TABS = ['effects', 'paint', 'keys'];
+
 const S = {
   connected: false,
   profile: 0,
@@ -236,7 +238,7 @@ function paintKeyEl(el, rgb, glow, strength) {
 function stillColors() {
   const keys = S.layout.keys;
   const L = S.lighting;
-  if (!S.connected || !L) return keys.map(() => null);
+  if (!S.connected || !L || S.tab === 'keys') return keys.map(() => null);
   if (S.tab === 'paint') {
     const work = S.paint.work[S.paint.set];
     return keys.map((k) => (work ? work[k.slot] : null));
@@ -254,6 +256,7 @@ function renderKeyboard() {
   if (!S.layout) return;
   const L = S.lighting;
   const painting = S.tab === 'paint';
+  const picking = S.tab === 'keys';
   const moving = animated();
   S.glow = painting || !L ? GLOW[4] : GLOW[L.brightness];
   $('kb-inner').style.setProperty('--glow', S.glow);
@@ -267,17 +270,20 @@ function renderKeyboard() {
     S.keyEls.forEach((el, i) => paintKeyEl(el, colors[i], S.glow, 1));
   }
   $('kb').dataset.mode = S.tab;
-  $('kb-keys').inert = !painting || !S.connected;
+  $('kb-keys').inert = !(painting || picking) || !S.connected;
   $('kb-screen-text').textContent = `P${S.profile + 1}`;
   $('stage-note').textContent = !S.connected
     ? ''
     : painting
       ? 'Click or drag across keys to paint. The keyboard follows as you go.'
+      : picking
+        ? 'Click a key to change what it does.'
       : !moving
         ? ''
         : Effects.isReactive(L.mode)
           ? 'Simulated preview. Type to try it.'
           : 'Simulated preview.';
+  renderKeys();
 }
 
 /* ---- animated preview -------------------------------------------------- */
@@ -501,7 +507,7 @@ function fillGroup(test) {
 async function showTab(name) {
   if (S.tab === name) return;
   S.tab = name;
-  for (const tab of ['effects', 'paint']) {
+  for (const tab of TABS) {
     const on = tab === name;
     $(`tab-${tab}`).setAttribute('aria-selected', String(on));
     $(`tab-${tab}`).tabIndex = on ? 0 : -1;
@@ -544,7 +550,7 @@ function applyState(state, seq) {
   S.connected = !!state.connected;
   setDeviceStatus('keyboard', S.connected,
     S.connected ? 'Ronin Wireless connected' : (state.error || 'Keyboard not found'));
-  for (const id of ['panel-effects', 'panel-paint']) $(id).inert = !S.connected;
+  for (const id of ['panel-effects', 'panel-paint', 'panel-keys']) $(id).inert = !S.connected;
   $('profiles').disabled = !S.connected;
 
   if (S.connected && (seq === undefined || seq === S.seq)) {
@@ -596,7 +602,7 @@ function bind() {
   });
 
   // tabs
-  const tabs = [$('tab-effects'), $('tab-paint')];
+  const tabs = TABS.map((name) => $(`tab-${name}`));
   tabs.forEach((tab, i) => {
     tab.addEventListener('click', () => showTab(tab.id.slice(4)));
     tab.addEventListener('keydown', (e) => {
@@ -617,12 +623,17 @@ function bind() {
     return key ? Number(key.dataset.index) : -1;
   };
   host.addEventListener('pointerdown', (e) => {
-    if (S.tab !== 'paint' || e.button !== 0) return;
+    if (e.button !== 0 || (S.tab !== 'paint' && S.tab !== 'keys')) return;
     const index = keyAt(e.clientX, e.clientY);
     if (index < 0) return;
+    focusKey(index);
+    if (S.tab === 'keys') {
+      selectKey(index);
+      e.preventDefault();
+      return;
+    }
     dragging = true;
     last = [e.clientX, e.clientY];
-    focusKey(index);
     applyTool(index, false);
     e.preventDefault();
   });
@@ -646,7 +657,8 @@ function bind() {
     if (!key) return;
     const index = Number(key.dataset.index);
     if (e.key === 'Enter' || e.key === ' ') {
-      applyTool(index, false);
+      if (S.tab === 'keys') selectKey(index);
+      else applyTool(index, false);
       e.preventDefault();
     } else if (e.key.startsWith('Arrow')) {
       const next = neighbour(index, e.key.slice(5));
@@ -795,6 +807,7 @@ async function start() {
     if (code) S.codeIndex[code] = i;
   });
   buildKeyboard();
+  buildKeys();
   bind();
   await refresh(true);
   setInterval(refresh, 3000);

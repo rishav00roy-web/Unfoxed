@@ -16,7 +16,9 @@ Device memory, as seen through CMD_READ_CONFIG:
 
     0x000           active profile (0..2)
     0x001 + p*0x40  lighting block of profile p
-    0x0C0 + p*0x200 key map of profile p, 3 bytes per matrix slot
+    0x0C0 + p*0x200 key map of profile p, 3 bytes per matrix slot:
+                    20 MM UU keyboard key (modifier bits, HID usage),
+                    30 LL HH media key (consumer usage), A0 .. .. the Fn key
     (custom colour sets are reached through their own commands)
 
 Matrix slots run column-major, 8 per column: slot = column * 8 + row.
@@ -46,6 +48,9 @@ CMD_DIRECT = 0x12
 CMD_DIRECT_END = 0x13
 
 OFF_PROFILE = 0x00
+OFF_KEYMAP = 0xC0
+KEYMAP_STRIDE = 0x200
+KEY_FN = 0xA0          # type byte of the Fn key
 OFF_LIGHTING = 0x01
 PROFILE_STRIDE = 0x40
 PROFILES = 3
@@ -259,9 +264,29 @@ class Keyboard:
             data[slot * 3:slot * 3 + 3] = bytes(c & 0xFF for c in rgb)
         return bytes(data)
 
-    # ---- key map (read only for now) -------------------------------------
+    # ---- key map ----------------------------------------------------------
 
     def get_keymap(self, profile):
         with self._lock:
-            raw = self._read(CMD_READ_CONFIG, 0xC0 + profile * 0x200, 3 * self.slots)
+            raw = self._read(CMD_READ_CONFIG, OFF_KEYMAP + profile * KEYMAP_STRIDE, 3 * self.slots)
         return [int.from_bytes(raw[i:i + 3], "big") for i in range(0, len(raw), 3)]
+
+    def set_keys(self, profile, changes):
+        """Give matrix slots a new function. `changes` maps slot -> 3-byte code."""
+        base = OFF_KEYMAP + profile * KEYMAP_STRIDE
+        with self._lock:
+            current = self.get_keymap(profile)
+            for slot in changes:
+                if not 0 <= slot < self.slots:
+                    raise ValueError("slot out of range")
+                if current[slot] >> 16 == KEY_FN:
+                    raise ValueError("The Fn key cannot be changed")
+            self._query(CMD_BEGIN)
+            try:
+                for slot, code in changes.items():
+                    self._write(CMD_WRITE_CONFIG, base + slot * 3, code.to_bytes(3, "big"))
+            finally:
+                self._query(CMD_END)
+            after = self.get_keymap(profile)
+            if any(after[slot] != code for slot, code in changes.items()):
+                raise DeviceError("The keyboard did not keep the new key functions")

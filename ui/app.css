@@ -761,3 +761,59 @@ select {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---- keys tab --------------------------------------------------------- */
+
+.keys {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.kb[data-mode="keys"] .key {
+  cursor: pointer;
+}
+
+.kb[data-mode="keys"] .key:hover .cap {
+  box-shadow: inset 0 0 0 1px var(--key-edge), 0 0 0 2px var(--line-strong);
+}
+
+.key[data-changed] .cap {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--text);
+}
+
+.key[data-selected] .cap,
+.kb[data-mode="keys"] .key[data-selected]:hover .cap {
+  box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 2px var(--accent);
+  color: var(--text);
+}
+
+.key-now {
+  min-height: calc(var(--fs-md) * var(--lh));
+}
+
+.key-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.btn[aria-pressed="true"],
+.chip[data-changed] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.knob-target {
+  height: var(--control-h);
+  border-radius: var(--r-md);
+}
+
+@media (max-width: 860px) {
+  .keys {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
