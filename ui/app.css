@@ -817,3 +817,50 @@ select {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---- mouse preview ---------------------------------------------------- */
+
+@media (min-width: 861px) {
+  .mouse {
+    grid-template-columns: 220px minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}
+
+.mouse-stage {
+  padding: var(--s4);
+}
+
+#mouse-art {
+  width: min(100%, 180px);
+  height: auto;
+}
+
+.m-body {
+  fill: var(--case);
+  stroke: var(--case-edge);
+}
+
+.m-part {
+  fill: var(--key);
+  stroke: var(--key-edge);
+  cursor: pointer;
+  transition: fill var(--fast) var(--ease), stroke var(--fast) var(--ease);
+}
+
+.m-part:hover,
+.m-part[data-on] {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.m-text {
+  fill: var(--text);
+  font: 600 20px var(--font-display);
+  text-anchor: middle;
+}
+
+.m-sub {
+  fill: var(--text-dim);
+  font-size: 12px;
+  text-anchor: middle;
+}
