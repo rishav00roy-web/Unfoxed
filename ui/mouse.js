@@ -120,6 +120,10 @@ function buildMouse(options) {
       }
       syncMouse();
     });
+    row.addEventListener('mouseenter', () => markPart(n));
+    row.addEventListener('mouseleave', () => markPart(-1));
+    select.addEventListener('focus', () => markPart(n));
+    select.addEventListener('blur', () => markPart(-1));
     row.append(label, select);
     $('button-rows').append(row);
   });
@@ -129,6 +133,16 @@ function buildMouse(options) {
     syncMouse();
   });
   $('mouse-apply').addEventListener('click', applyMouse);
+  document.querySelectorAll('.m-part').forEach((part) => {
+    part.addEventListener('click', () => $('button-' + part.dataset.n).focus());
+  });
+}
+
+/* Light up one button on the diagram, or none with -1. */
+function markPart(n) {
+  document.querySelectorAll('.m-part').forEach((part) => {
+    part.toggleAttribute('data-on', Number(part.dataset.n) === n);
+  });
 }
 
 /* ---- drawing ----------------------------------------------------------- */
@@ -159,6 +173,8 @@ function syncMouse() {
     }
     select.value = code;
   });
+  $('m-dpi').textContent = d.dpi[d.current] + ' DPI';
+  $('m-hz').textContent = d.polling ? d.polling + ' Hz' : '';
   const dirty = mouseDirty();
   $('mouse-status').textContent = !M.connected ? '' : dirty ? 'Unsaved changes.' : 'Saved on the mouse.';
   $('mouse-revert').disabled = !dirty || M.busy;

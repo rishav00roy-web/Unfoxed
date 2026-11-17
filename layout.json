@@ -715,5 +715,22 @@
 "w": 1.0,
 "code": 2097231
 }
+],
+"extras": [
+{
+"slot": 87,
+"label": "Knob, turn left",
+"code": 3205632
+},
+{
+"slot": 112,
+"label": "Knob, press",
+"code": 3203584
+},
+{
+"slot": 111,
+"label": "Knob, turn right",
+"code": 3205376
+}
 ]
 }

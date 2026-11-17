@@ -47,6 +47,7 @@
     <div class="tabs" role="tablist" aria-label="Lighting">
       <button role="tab" id="tab-effects" aria-controls="panel-effects" aria-selected="true">Effects</button>
       <button role="tab" id="tab-paint" aria-controls="panel-paint" aria-selected="false" tabindex="-1">Per-key colours</button>
+      <button role="tab" id="tab-keys" aria-controls="panel-keys" aria-selected="false" tabindex="-1">Keys</button>
     </div>
 
     <section class="panel" id="panel-effects" role="tabpanel" aria-labelledby="tab-effects">
@@ -119,11 +120,53 @@
         <button type="button" class="btn btn-primary" id="paint-save">Save to keyboard</button>
       </div>
     </section>
+
+    <section class="panel" id="panel-keys" role="tabpanel" aria-labelledby="tab-keys" hidden>
+      <div class="keys">
+        <section class="card" aria-labelledby="key-title">
+          <h2 id="key-title">Choose a key</h2>
+          <p class="key-now" id="key-now"></p>
+          <div class="key-controls" id="key-controls" hidden>
+            <button type="button" class="btn" id="key-capture" aria-pressed="false">Press a key…</button>
+            <select id="key-pick" aria-label="Choose a function from a list"></select>
+            <button type="button" class="btn" id="key-default">Back to default</button>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="knob-title">
+          <h2 id="knob-title">Knob</h2>
+          <div class="chips" id="knob-targets"></div>
+        </section>
+      </div>
+
+      <div class="actions">
+        <p class="actions-status" id="keys-status" role="status"></p>
+        <button type="button" class="btn" id="keys-revert">Revert</button>
+        <button type="button" class="btn btn-primary" id="keys-save">Save to keyboard</button>
+      </div>
+    </section>
     </div>
 
     <div class="view" id="view-mouse" hidden>
       <div id="mouse-body">
         <div class="mouse">
+          <section class="stage mouse-stage" aria-label="Mouse preview">
+            <svg id="mouse-art" viewBox="0 0 200 300" role="img" aria-label="Mouse diagram">
+              <path class="m-body" d="M100 10C150 10 180 50 180 110V200C180 260 145 290 100 290C55 290 20 260 20 200V110C20 50 50 10 100 10Z"/>
+              <path class="m-part" data-n="0" d="M96 14C54 16 26 50 24 108V128H96Z"><title>Left button</title></path>
+              <path class="m-part" data-n="1" d="M104 14C146 16 174 50 176 108V128H104Z"><title>Right button</title></path>
+              <rect class="m-part" data-n="2" x="90" y="40" width="20" height="44" rx="10"><title>Wheel click</title></rect>
+              <rect class="m-part" data-n="7" x="92" y="92" width="16" height="22" rx="5"><title>DPI button</title></rect>
+              <rect class="m-part" data-n="5" x="90" y="140" width="20" height="14" rx="5"><title>Lighting button</title></rect>
+              <rect class="m-part" data-n="6" x="12" y="78" width="12" height="30" rx="5"><title>Fire button</title></rect>
+              <rect class="m-part" data-n="4" x="8" y="120" width="12" height="34" rx="5"><title>Side button, front</title></rect>
+              <rect class="m-part" data-n="3" x="8" y="160" width="12" height="34" rx="5"><title>Side button, back</title></rect>
+              <text class="m-text" id="m-dpi" x="100" y="216"></text>
+              <text class="m-sub" id="m-hz" x="100" y="238"></text>
+            </svg>
+            <p class="stage-note">Diagram, not to scale. Point at a button to find it in the list.</p>
+          </section>
+
           <section class="card" aria-labelledby="dpi-title">
             <h2 id="dpi-title">DPI</h2>
             <p class="hint">Choose the slot to use now. The DPI button on the mouse steps through the slots that are on.</p>
@@ -157,6 +200,7 @@
 
   <script src="/effects.js" defer></script>
   <script src="/app.js" defer></script>
+  <script src="/keys.js" defer></script>
   <script src="/mouse.js" defer></script>
 </body>
 </html>
