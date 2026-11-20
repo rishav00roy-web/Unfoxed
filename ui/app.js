@@ -192,7 +192,8 @@ function buildSwatches(host, list, onPick, withPicker) {
     picker = document.createElement('input');
     picker.type = 'color';
     picker.setAttribute('aria-label', 'Custom colour');
-    picker.addEventListener('input', () => onPick(fromHex(picker.value), -1));
+    picker.addEventListener('input', () => onPick(fromHex(picker.value), -1, true));
+    picker.addEventListener('change', () => onPick(fromHex(picker.value), -1, false));
     label.append(picker);
     host.append(label);
   }
@@ -367,15 +368,18 @@ function syncControls() {
   syncSwatches(L.random ? -1 : L.color);
 }
 
+/* `save` false only updates the screen: sliders and the colour picker save
+   once, when let go, because every save is a write to the keyboard's flash. */
 let pushTimer;
-function changeLighting(patch) {
+function changeLighting(patch, save = true) {
   if (!S.lighting) return;
   Object.assign(S.lighting, patch);
   S.seq += 1;
+  S.lastWrite = Date.now();     // keep the 3-second refresh from undoing a drag
   syncControls();
   renderKeyboard();
   clearTimeout(pushTimer);
-  pushTimer = setTimeout(pushLighting, 180);
+  if (save) pushTimer = setTimeout(pushLighting, 180);
 }
 
 async function pushLighting() {
@@ -589,15 +593,22 @@ function bind() {
     changeLighting(patch);
   });
 
-  $('brightness').addEventListener('input', (e) => changeLighting({ brightness: Number(e.target.value) }));
-  $('speed').addEventListener('input', (e) => changeLighting({ speed: SPEED_MAX - Number(e.target.value) }));
+  $('brightness').addEventListener('input', (e) => changeLighting({ brightness: Number(e.target.value) }, false));
+  $('brightness').addEventListener('change', (e) => changeLighting({ brightness: Number(e.target.value) }));
+  $('speed').addEventListener('input', (e) => changeLighting({ speed: SPEED_MAX - Number(e.target.value) }, false));
+  $('speed').addEventListener('change', (e) => changeLighting({ speed: SPEED_MAX - Number(e.target.value) }));
   $('field-direction').addEventListener('change', (e) => changeLighting({ direction: Number(e.target.value) }));
   $('rainbow').addEventListener('change', (e) => changeLighting({ random: e.target.checked }));
   $('controls').addEventListener('submit', (e) => e.preventDefault());
 
-  $('profiles').addEventListener('change', async (e) => {
+  // Clicking a profile always sends it, even the one already shown: the
+  // receiver can store a profile the keyboard never switched to.
+  $('profiles').addEventListener('click', async (e) => {
+    const input = e.target.closest('label')?.querySelector('input');
+    if (!input || input.disabled) return;
+    e.preventDefault();
     S.seq += 1;
-    await write('/api/profile', { profile: Number(e.target.value) });
+    await write('/api/profile', { profile: Number(input.value) });
     if (S.tab === 'paint') sendPreview();
   });
 
@@ -762,7 +773,7 @@ function eventCode(code) {
 async function start() {
   readKeyBase();
   buildEffects();
-  syncSwatches = buildSwatches($('swatches'), SWATCHES, (rgb) => changeLighting({ color: [...rgb], random: false }), true);
+  syncSwatches = buildSwatches($('swatches'), SWATCHES, (rgb, index, live) => changeLighting({ color: [...rgb], random: false }, !live), true);
   for (let i = 0; i < VARIANTS; i += 1) {
     const chip = document.createElement('button');
     chip.type = 'button';
