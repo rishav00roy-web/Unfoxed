@@ -28,6 +28,8 @@ Keyboard:
   arrows, F keys and so on), watch the real keyboard follow live, then save to
   one of seven layouts stored on the keyboard
 - **Profiles**: switch between the keyboard's three onboard profiles
+- **Keys**: change what any key or the volume knob does, by pressing the new
+  key or combination, or by picking a media key from a list
 
 Mouse:
 
@@ -40,7 +42,7 @@ Mouse:
 
 Everything is stored on the devices, so settings stay after the app is closed.
 
-Not there yet: keyboard key remapping, macros, mouse lighting.
+Not there yet: macros, mouse lighting.
 
 ## Download
 
