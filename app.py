@@ -48,10 +48,19 @@ TOKEN = secrets.token_urlsafe(24)
 preview_on = threading.Event()
 
 
+profile_synced = threading.Event()
+
+
 def read_state():
     try:
         kb.connect()
         profile = kb.get_profile()
+        if not profile_synced.is_set():
+            # The receiver can record a profile the keyboard never switched to
+            # (for example, written while the keyboard slept). Send it once so
+            # the keyboard runs the profile this app edits.
+            kb.set_profile(profile)
+            profile_synced.set()
         return {
             "connected": True,
             "profile": profile,
