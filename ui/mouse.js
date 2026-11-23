@@ -102,6 +102,24 @@ function buildMouse(options) {
     syncMouse();
   });
 
+  options.light_effects.forEach((name, n) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.textContent = name;
+    chip.setAttribute('aria-pressed', 'false');
+    chip.addEventListener('click', () => {
+      M.draft.light_effect = n;
+      syncMouse();
+    });
+    $('light-effects').append(chip);
+  });
+  $('light-speed').max = options.light_speed_max;
+  $('light-speed').addEventListener('input', (e) => {
+    M.draft.light_speed = Number(e.target.value);
+    syncMouse();
+  });
+
   BUTTON_NAMES.forEach((name, n) => {
     const row = document.createElement('div');
     row.className = 'field button-row';
@@ -166,6 +184,11 @@ function syncMouse() {
   document.querySelectorAll('input[name="polling"]').forEach((radio) => {
     radio.checked = Number(radio.value) === d.polling;
   });
+  document.querySelectorAll('#light-effects .chip').forEach((chip, n) => {
+    chip.setAttribute('aria-pressed', String(n === d.light_effect));
+  });
+  $('light-speed').value = d.light_speed;
+  $('light-speed-out').textContent = `${d.light_speed + 1} / ${M.options.light_speed_max + 1}`;
   d.buttons.forEach((code, n) => {
     const select = $(`button-${n}`);
     if (![...select.options].some((o) => Number(o.value) === code)) {
@@ -192,6 +215,8 @@ function takeMouseState(state) {
       current: state.current,
       polling: state.polling,
       buttons: state.buttons,
+      light_effect: state.light_effect,
+      light_speed: state.light_speed,
     };
     M.draft = clone(M.saved);
   }

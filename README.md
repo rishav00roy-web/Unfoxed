@@ -39,10 +39,12 @@ Mouse:
 - **Buttons**: give each of the eight buttons a function (clicks, back and
   forward, DPI up, down and cycle, double click, rapid fire, lighting cycle,
   or disabled)
+- **Lighting**: eight effects (solid, breathing, flowing, comet, neon and more)
+  and their speed
 
 Everything is stored on the devices, so settings stay after the app is closed.
 
-Not there yet: macros, mouse lighting.
+Not there yet: macros, mouse lighting colour and brightness.
 
 ## Download
 

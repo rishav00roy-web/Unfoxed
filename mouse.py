@@ -20,6 +20,7 @@ Settings memory, as far as it is mapped:
             [5] [6] [7] = low nibbles, two slots per byte
     0x18  [0] bits 0-2  current DPI slot
           [1] bits 0-5  which slots are enabled
+          [4] bits 4-6  lighting effect, bits 0-2 its cycle time (bits 7, 3 kept)
           [6]           polling interval in ms, minus one
     0x44, 0x50, 0x60  the button table again, for the other modes
 """
@@ -58,6 +59,14 @@ DPI_STEP = {dpi: step for step, dpi in STEP_DPI.items()}
 DPI_VALUES = sorted(DPI_STEP)
 
 POLLING = {0: 1000, 1: 500, 3: 250, 7: 125}     # stored byte -> Hz
+
+# Lighting effects, in the vendor's order. Effect 2 (solid) is confirmed on the
+# mouse; the other names are the vendor app's labels for the same numbers.
+LIGHT_EFFECTS = [
+    "DPI colour breathing", "Colour cycle breathing", "Solid", "Flowing water",
+    "Single light flowing", "Comet", "Neon", "Ambilight",
+]
+LIGHT_TIME_MAX = 7
 POLLING_BYTE = {hz: byte for byte, hz in POLLING.items()}
 
 # Button functions this app can set, by the low five bits of the button code.
@@ -193,6 +202,8 @@ class Mouse:
             "current": settings[0] & 7,
             "polling": POLLING.get(settings[6]),
             "buttons": [code & CODE_MASK for code in buttons],
+            "light_effect": settings[4] >> 4 & 7,
+            "light_speed": LIGHT_TIME_MAX - (settings[4] & 7),
         }
 
     @staticmethod
@@ -200,7 +211,8 @@ class Mouse:
         low = [block[5] >> 4, block[5] & 0xF, block[6] >> 4, block[6] & 0xF, block[7] >> 4, block[7] & 0xF]
         return [low[n] | ((block[3] >> n & 1) << 4) for n in range(SLOTS)]
 
-    def apply(self, dpi=None, enabled=None, current=None, polling=None, buttons=None):
+    def apply(self, dpi=None, enabled=None, current=None, polling=None, buttons=None,
+              light_effect=None, light_speed=None):
         """Change settings. Anything left as None stays as it is."""
         with self._lock:
             old_dpi = self.read(ADDR_DPI, 8)
@@ -234,6 +246,15 @@ class Mouse:
                 if polling not in POLLING_BYTE:
                     raise ValueError("Polling rate must be 125, 250, 500 or 1000")
                 new_set[6] = POLLING_BYTE[polling]
+
+            if light_effect is not None:
+                if not 0 <= light_effect < len(LIGHT_EFFECTS):
+                    raise ValueError("Unknown lighting effect")
+                new_set[4] = (new_set[4] & 0x8F) | light_effect << 4
+            if light_speed is not None:
+                if not 0 <= light_speed <= LIGHT_TIME_MAX:
+                    raise ValueError("Lighting speed out of range")
+                new_set[4] = (new_set[4] & 0xF8) | (LIGHT_TIME_MAX - light_speed)
 
             changed = False
             if bytes(new_dpi) != old_dpi:

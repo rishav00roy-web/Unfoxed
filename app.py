@@ -43,6 +43,8 @@ MOUSE_OPTIONS = {
     "dpi": mouse.DPI_VALUES,
     "polling": sorted(mouse.POLLING_BYTE),
     "functions": [[code, name] for code, name in mouse.FUNCTIONS.items()],
+    "light_effects": mouse.LIGHT_EFFECTS,
+    "light_speed_max": mouse.LIGHT_TIME_MAX,
 }
 TOKEN = secrets.token_urlsafe(24)
 preview_on = threading.Event()
@@ -84,6 +86,9 @@ def clean_mouse(body):
         out["polling"] = int(body["polling"])
     if body.get("buttons") is not None:
         out["buttons"] = [int(v) for v in body["buttons"]]
+    for key in ("light_effect", "light_speed"):
+        if body.get(key) is not None:
+            out[key] = int(body[key])
     return out
 
 
