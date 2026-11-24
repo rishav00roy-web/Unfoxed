@@ -18,6 +18,9 @@ const M = {
   busy: false,
 };
 
+/* The mouse keeps 16 levels per colour channel. */
+const quantise = (rgb) => rgb.map((c) => Math.round(c / 17) * 17);
+
 const mouseDirty = () => !!M.saved && !same(M.saved, M.draft);
 
 /* ---- building ---------------------------------------------------------- */
@@ -48,6 +51,15 @@ function buildMouse(options) {
     range.setAttribute('aria-label', `Slot ${n + 1} DPI`);
 
     const out = document.createElement('output');
+
+    const colour = document.createElement('input');
+    colour.type = 'color';
+    colour.className = 'dpi-colour';
+    colour.setAttribute('aria-label', `Slot ${n + 1} colour`);
+    colour.addEventListener('input', () => {
+      M.draft.dpi_colours[n] = quantise(fromHex(colour.value));
+      syncMouse();
+    });
 
     const toggle = document.createElement('label');
     toggle.className = 'switch';
@@ -82,7 +94,7 @@ function buildMouse(options) {
       syncMouse();
     });
 
-    row.append(pick, range, out, toggle);
+    row.append(pick, colour, range, out, toggle);
     $('dpi-rows').append(row);
   }
 
@@ -115,6 +127,22 @@ function buildMouse(options) {
     $('light-effects').append(chip);
   });
   $('light-speed').max = options.light_speed_max;
+  $('light-brightness').max = options.brightness_max;
+  $('light-brightness').addEventListener('input', (e) => {
+    M.draft.light_brightness = Number(e.target.value);
+    syncMouse();
+  });
+  for (let n = 0; n < 7; n += 1) {
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.className = 'dpi-colour';
+    input.setAttribute('aria-label', `Cycle colour ${n + 1}`);
+    input.addEventListener('input', () => {
+      M.draft.palette[n] = quantise(fromHex(input.value));
+      syncMouse();
+    });
+    $('palette').append(input);
+  }
   $('light-speed').addEventListener('input', (e) => {
     M.draft.light_speed = Number(e.target.value);
     syncMouse();
@@ -174,7 +202,8 @@ function syncMouse() {
   }
   const values = M.options.dpi;
   document.querySelectorAll('.dpi-row').forEach((row, n) => {
-    const [radio, range, box] = row.querySelectorAll('input');
+    const [radio, colour, range, box] = row.querySelectorAll('input');
+    colour.value = toHex(d.dpi_colours[n]);
     radio.checked = d.current === n;
     range.value = Math.max(0, values.indexOf(d.dpi[n]));
     row.querySelector('output').textContent = d.dpi[n] ?? values[0];
@@ -188,6 +217,10 @@ function syncMouse() {
     chip.setAttribute('aria-pressed', String(n === d.light_effect));
   });
   $('light-speed').value = d.light_speed;
+  $('light-brightness').value = d.light_brightness;
+  $('light-brightness-out').textContent = d.light_brightness === 0
+    ? 'Off' : `${Math.round((d.light_brightness / M.options.brightness_max) * 100)}%`;
+  document.querySelectorAll('#palette input').forEach((input, n) => { input.value = toHex(d.palette[n]); });
   $('light-speed-out').textContent = `${d.light_speed + 1} / ${M.options.light_speed_max + 1}`;
   d.buttons.forEach((code, n) => {
     const select = $(`button-${n}`);
@@ -217,6 +250,9 @@ function takeMouseState(state) {
       buttons: state.buttons,
       light_effect: state.light_effect,
       light_speed: state.light_speed,
+      palette: state.palette,
+      light_brightness: state.light_brightness,
+      dpi_colours: state.dpi_colours,
     };
     M.draft = clone(M.saved);
   }

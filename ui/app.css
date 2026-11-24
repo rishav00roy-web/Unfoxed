@@ -708,7 +708,7 @@ select {
 
 .dpi-row {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr) 52px auto;
+  grid-template-columns: 76px 28px minmax(0, 1fr) 52px auto;
   gap: var(--s3);
   align-items: center;
   min-height: var(--control-h);
@@ -863,4 +863,23 @@ select {
   fill: var(--text-dim);
   font-size: 12px;
   text-anchor: middle;
+}
+
+.dpi-colour {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: none;
+  cursor: pointer;
+}
+
+.dpi-colour::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.dpi-colour::-webkit-color-swatch {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-full);
 }

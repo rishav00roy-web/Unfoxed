@@ -22,6 +22,12 @@ Settings memory, as far as it is mapped:
           [1] bits 0-5  which slots are enabled
           [4] bits 4-6  lighting effect, bits 0-2 its cycle time (bits 7, 3 kept)
           [6]           polling interval in ms, minus one
+    0x20  colours, 18 bytes = 6 x (R, G, B). Each byte holds two 4-bit
+          channels: high nibble = cycle colour n, low nibble = DPI slot n colour.
+          Solid and the DPI effects show the colour of the DPI slot in use.
+    0x38  [6] cycle colour 6, red (high) and green (low)
+          [7] bits 4-6  lighting brightness, 0 = brightest, 7 = off;
+              bits 0-3  cycle colour 6, blue
     0x44, 0x50, 0x60  the button table again, for the other modes
 """
 
@@ -44,6 +50,11 @@ F_RELOAD = 0x10
 ADDR_BUTTONS = 0x08
 ADDR_DPI = 0x10
 ADDR_SETTINGS = 0x18
+ADDR_COLOURS = 0x20
+COLOUR_BYTES = 18
+ADDR_LIGHT = 0x38
+BRIGHTNESS_MAX = 7
+PALETTE = 7          # colours the cycling effects step through
 BUTTON_MIRRORS = (0x44, 0x50, 0x60)
 
 SLOTS = 6
@@ -88,6 +99,34 @@ CODE_MASK = 0x1F
 LEFT_CLICK = 0x01
 
 
+class _DeviceLock:
+    """A lock shared by every process on this PC, so two programs (or two copies
+    of this one) never interleave exchanges. The mouse remembers the address of
+    the first request in an exchange, so interleaved requests read and write the
+    wrong place."""
+
+    def __init__(self, name):
+        self._handle = None
+        self._name = name
+
+    def __enter__(self):
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        if self._handle is None:
+            k32.CreateMutexW.restype = ctypes.c_void_p
+            self._handle = k32.CreateMutexW(None, False, self._name)
+        if k32.WaitForSingleObject(ctypes.c_void_p(self._handle), 5000) not in (0, 0x80):
+            raise MouseError("The mouse is busy with another program")
+        return self
+
+    def __exit__(self, *exc):
+        import ctypes
+        ctypes.windll.kernel32.ReleaseMutex(ctypes.c_void_p(self._handle))
+
+
+_device_lock = _DeviceLock(r"Local\UnfoxedMouseAccess")
+
+
 class MouseError(Exception):
     """The mouse is missing or did not take a setting."""
 
@@ -120,6 +159,8 @@ class Mouse:
             except OSError as exc:
                 raise MouseError(f"Could not open the mouse: {exc}") from exc
             self._dev = dev
+            with _device_lock:
+                self._flush()
 
     def close(self):
         with self._lock:
@@ -141,8 +182,20 @@ class Mouse:
             self.close()
             raise MouseError(f"Lost the mouse: {exc}") from exc
 
+    @staticmethod
+    def _blocks(addr, length):
+        """Split a range into pieces that stay inside one 8-byte block. The mouse
+        only moves data within a block; longer transfers land at wrong addresses."""
+        end = addr + length
+        while addr < end:
+            stop = min(end, (addr // 8 + 1) * 8)
+            yield addr, stop - addr
+            addr = stop
+
     def read(self, addr, length):
-        with self._lock:
+        if length > 8 or addr % 8 + length > 8:
+            return b"".join(self.read(a, n) for a, n in self._blocks(addr, length))
+        with self._lock, _device_lock:
             if self._dev is None:
                 raise MouseError("Mouse not connected")
             out = bytearray()
@@ -164,7 +217,11 @@ class Mouse:
     def write(self, addr, data):
         """Write bytes, commit them, and check they arrived."""
         data = bytes(data)
-        with self._lock:
+        if len(data) > 8 or addr % 8 + len(data) > 8:
+            for a, n in self._blocks(addr, len(data)):
+                self.write(a, data[a - addr:a - addr + n])
+            return
+        with self._lock, _device_lock:
             if self._dev is None:
                 raise MouseError("Mouse not connected")
             if addr < ADDR_BUTTONS:
@@ -182,17 +239,33 @@ class Mouse:
 
     def reload(self):
         """Make the mouse start using what is in its memory."""
-        with self._lock:
+        with self._lock, _device_lock:
             self._send(F_RELOAD)
             time.sleep(0.006)
             self._send(0)
             time.sleep(0.004)
+            self._flush()
+
+    def _flush(self):
+        """After a reload (and possibly when we first connect) the mouse answers
+        the next request from the address it used last. One throwaway read
+        clears that, so the next real read gets the address it asks for."""
+        self._send(F_READ, 0, 0, 0, 0)
+        time.sleep(0.003)
+        try:
+            self._dev.get_feature_report(REPORT_ID, 8)
+        except (OSError, ValueError):
+            pass
+        self._send(0)
+        time.sleep(0.003)
 
     # ---- settings ---------------------------------------------------------
 
     def get_state(self):
         with self._lock:
             buttons = self.read(ADDR_BUTTONS, 8)
+            colours = self.read(ADDR_COLOURS, COLOUR_BYTES)
+            light = self.read(ADDR_LIGHT, 8)
             dpi = self.read(ADDR_DPI, 8)
             settings = self.read(ADDR_SETTINGS, 8)
         steps = self._steps(dpi)
@@ -204,6 +277,10 @@ class Mouse:
             "buttons": [code & CODE_MASK for code in buttons],
             "light_effect": settings[4] >> 4 & 7,
             "light_speed": LIGHT_TIME_MAX - (settings[4] & 7),
+            "palette": [[(colours[n * 3 + k] >> 4) * 17 for k in range(3)] for n in range(SLOTS)]
+                       + [[(light[6] >> 4) * 17, (light[6] & 0xF) * 17, (light[7] & 0xF) * 17]],
+            "light_brightness": BRIGHTNESS_MAX - (light[7] >> 4 & 7),
+            "dpi_colours": [[(colours[n * 3 + k] & 0xF) * 17 for k in range(3)] for n in range(SLOTS)],
         }
 
     @staticmethod
@@ -212,7 +289,8 @@ class Mouse:
         return [low[n] | ((block[3] >> n & 1) << 4) for n in range(SLOTS)]
 
     def apply(self, dpi=None, enabled=None, current=None, polling=None, buttons=None,
-              light_effect=None, light_speed=None):
+              light_effect=None, light_speed=None, palette=None, light_brightness=None,
+              dpi_colours=None):
         """Change settings. Anything left as None stays as it is."""
         with self._lock:
             old_dpi = self.read(ADDR_DPI, 8)
@@ -257,6 +335,17 @@ class Mouse:
                 new_set[4] = (new_set[4] & 0xF8) | (LIGHT_TIME_MAX - light_speed)
 
             changed = False
+            if palette is not None or dpi_colours is not None:
+                changed = self._set_colours(palette, dpi_colours) or changed
+            if light_brightness is not None:
+                if not 0 <= light_brightness <= BRIGHTNESS_MAX:
+                    raise ValueError("Brightness out of range")
+                old = self.read(ADDR_LIGHT, 8)
+                new = bytearray(old)
+                new[7] = (old[7] & 0x8F) | (BRIGHTNESS_MAX - light_brightness) << 4
+                if bytes(new) != old:
+                    self.write(ADDR_LIGHT, new)
+                    changed = True
             if bytes(new_dpi) != old_dpi:
                 self.write(ADDR_DPI, new_dpi)
                 changed = True
@@ -267,6 +356,43 @@ class Mouse:
                 changed = self._set_buttons(buttons) or changed
             if changed:
                 self.reload()
+
+    def _set_colours(self, palette, dpi_colours):
+        """Colours are stored as 4-bit channels; 8-bit input is rounded."""
+        def nibble(value):
+            return max(0, min(15, round(int(value) / 17)))
+        old = self.read(ADDR_COLOURS, COLOUR_BYTES)
+        new = bytearray(old)
+        if palette is not None:
+            if len(palette) != PALETTE:
+                raise ValueError("Expected seven cycle colours")
+            for n, rgb in enumerate(palette[:SLOTS]):
+                for k in range(3):
+                    i = n * 3 + k
+                    new[i] = nibble(rgb[k]) << 4 | (new[i] & 0xF)
+            last = palette[SLOTS]
+            light = self.read(ADDR_LIGHT, 8)
+            light_new = bytearray(light)
+            light_new[6] = nibble(last[0]) << 4 | nibble(last[1])
+            light_new[7] = (light[7] & 0xF0) | nibble(last[2])
+            if bytes(light_new) != light:
+                self.write(ADDR_LIGHT, light_new)
+                changed_light = True
+            else:
+                changed_light = False
+        else:
+            changed_light = False
+        if dpi_colours is not None:
+            if len(dpi_colours) != SLOTS:
+                raise ValueError("Expected a colour for each DPI slot")
+            for n, rgb in enumerate(dpi_colours):
+                for k in range(3):
+                    i = n * 3 + k
+                    new[i] = (new[i] & 0xF0) | nibble(rgb[k])
+        if bytes(new) == old:
+            return changed_light
+        self.write(ADDR_COLOURS, new)
+        return True
 
     def _set_buttons(self, codes):
         if len(codes) != BUTTONS:
