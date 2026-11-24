@@ -73,7 +73,7 @@ const GROUPS = [
 
 /* ---- state ------------------------------------------------------------- */
 
-const TABS = ['effects', 'paint', 'keys'];
+const TABS = ['effects', 'paint', 'keys', 'live'];
 
 const S = {
   connected: false,
@@ -239,7 +239,7 @@ function paintKeyEl(el, rgb, glow, strength) {
 function stillColors() {
   const keys = S.layout.keys;
   const L = S.lighting;
-  if (!S.connected || !L || S.tab === 'keys') return keys.map(() => null);
+  if (!S.connected || !L || S.tab === 'keys' || S.tab === 'live') return keys.map(() => null);
   if (S.tab === 'paint') {
     const work = S.paint.work[S.paint.set];
     return keys.map((k) => (work ? work[k.slot] : null));
@@ -517,6 +517,7 @@ async function showTab(name) {
     $(`tab-${tab}`).tabIndex = on ? 0 : -1;
     $(`panel-${tab}`).hidden = !on;
   }
+  if (name === 'live') loadLive();
   if (name === 'paint') {
     if (S.lighting && S.lighting.mode === MODE_CUSTOM) S.paint.set = S.lighting.custom_set;
     renderKeyboard();
@@ -819,7 +820,9 @@ async function start() {
   });
   buildKeyboard();
   buildKeys();
+  buildLive();
   bind();
+  loadLive();
   await refresh(true);
   setInterval(refresh, 3000);
 }

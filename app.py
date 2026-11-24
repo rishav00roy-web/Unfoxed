@@ -19,6 +19,7 @@ from urllib.parse import parse_qs, urlparse
 
 import desktop
 import evision
+import live
 import mouse
 from evision import DeviceError
 from mouse import MouseError
@@ -33,6 +34,7 @@ STATIC = {
     "/effects.js": "text/javascript",
     "/mouse.js": "text/javascript",
     "/keys.js": "text/javascript",
+    "/live.js": "text/javascript",
 }
 
 LAYOUT = json.loads((ROOT / "layout.json").read_text(encoding="utf-8"))
@@ -40,6 +42,7 @@ REMAP_SLOTS = {key["slot"] for key in LAYOUT["keys"]} | {extra["slot"] for extra
 
 kb = evision.Keyboard()
 ms = mouse.Mouse()
+engine = live.LiveEngine(kb, ms, LAYOUT)
 MOUSE_OPTIONS = {
     "dpi": mouse.DPI_VALUES,
     "polling": sorted(mouse.POLLING_BYTE),
@@ -195,6 +198,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._authorised():
             return self._send(403, {"error": "forbidden"})
         try:
+            if url.path == "/api/live":
+                return self._send(200, engine.state())
             if url.path == "/api/state":
                 return self._send(200, read_state())
             if url.path == "/api/mouse":
@@ -228,6 +233,13 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/keymap":
                 kb.set_keys(kb.get_profile(), clean_keys(body))
                 return self._send(200, read_keymap())
+            if self.path == "/api/live":
+                changes = {k: body[k] for k in ("effect", "base", "accent", "rainbow", "mouse_follows", "brightness") if k in body}
+                for key in ("base", "accent"):
+                    if key in changes:
+                        changes[key] = [int(c) & 0xFF for c in changes[key][:3]]
+                engine.configure(changes)
+                return self._send(200, engine.state())
             if self.path == "/api/profile":
                 end_preview()
                 kb.set_profile(int(body["profile"]))
@@ -252,6 +264,7 @@ class Handler(BaseHTTPRequestHandler):
                 end_preview()
                 return self._send(200, read_state())
             if self.path == "/api/preview":
+                engine.stop()             # painting takes over the keys while it runs
                 kb.direct(clean_colors(body["colors"]))
                 preview_on.set()
                 return self._send(200, {"ok": True})
@@ -318,6 +331,9 @@ def main():
     if not args.serve and not desktop.claim_single_instance():
         return 0
 
+    if engine.settings["effect"]:
+        engine.start()            # carry on with the live effect from last time
+
     port = args.port or free_port()
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     server.daemon_threads = True
@@ -341,6 +357,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        engine.stop()
         end_preview()
         kb.close()
         ms.close()

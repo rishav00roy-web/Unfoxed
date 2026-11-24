@@ -48,6 +48,7 @@
       <button role="tab" id="tab-effects" aria-controls="panel-effects" aria-selected="true">Effects</button>
       <button role="tab" id="tab-paint" aria-controls="panel-paint" aria-selected="false" tabindex="-1">Per-key colours</button>
       <button role="tab" id="tab-keys" aria-controls="panel-keys" aria-selected="false" tabindex="-1">Keys</button>
+      <button role="tab" id="tab-live" aria-controls="panel-live" aria-selected="false" tabindex="-1">Live</button>
     </div>
 
     <section class="panel" id="panel-effects" role="tabpanel" aria-labelledby="tab-effects">
@@ -145,6 +146,37 @@
         <button type="button" class="btn btn-primary" id="keys-save">Save to keyboard</button>
       </div>
     </section>
+
+    <section class="panel" id="panel-live" role="tabpanel" aria-labelledby="tab-live" hidden>
+      <div class="keys">
+        <section class="card" aria-labelledby="live-title">
+          <h2 id="live-title">Live effect</h2>
+          <div class="chips" id="live-effects" role="group" aria-label="Live effect"></div>
+          <p class="hint" id="live-about"></p>
+          <p class="key-now" id="live-status" role="status"></p>
+        </section>
+
+        <section class="card">
+          <div id="live-colours">
+            <div class="field">
+              <label for="live-base">Background colour</label>
+              <input type="color" id="live-base" class="dpi-colour">
+            </div>
+            <div class="field">
+              <label for="live-accent">Effect colour</label>
+              <input type="color" id="live-accent" class="dpi-colour">
+            </div>
+            <label class="switch"><input type="checkbox" id="live-rainbow"><span class="switch-track" aria-hidden="true"></span><span>Rainbow instead</span></label>
+          </div>
+          <div class="field">
+            <label for="live-brightness">Brightness</label>
+            <output for="live-brightness" id="live-brightness-out"></output>
+            <input type="range" id="live-brightness" min="10" max="100" step="5">
+          </div>
+          <label class="switch"><input type="checkbox" id="live-mouse"><span class="switch-track" aria-hidden="true"></span><span>Mouse follows the keyboard</span></label>
+        </section>
+      </div>
+    </section>
     </div>
 
     <div class="view" id="view-mouse" hidden>
@@ -221,6 +253,7 @@
   <script src="/effects.js" defer></script>
   <script src="/app.js" defer></script>
   <script src="/keys.js" defer></script>
+  <script src="/live.js" defer></script>
   <script src="/mouse.js" defer></script>
 </body>
 </html>

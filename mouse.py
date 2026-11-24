@@ -41,6 +41,8 @@ PID = 0x1440
 USAGE_PAGE = 0xFF01
 REPORT_ID = 7
 
+CMD_MODE = 0x13
+CMD_COLOUR = 0x14
 CMD_MEMORY = 0x18
 F_READ = 0x05
 F_WRITE = 0x03
@@ -258,6 +260,36 @@ class Mouse:
             pass
         self._send(0)
         time.sleep(0.003)
+
+    # ---- live colour (not saved) ---------------------------------------------
+
+    def live_begin(self):
+        """Switch the mouse to a steady colour the app can change many times a
+        second (command 0x13, solid at full brightness). Nothing is saved."""
+        with self._lock, _device_lock:
+            self._feature(bytes([REPORT_ID, CMD_MODE, 0xFF, 0x80 | 2 << 4, 0x0B, 0x00, 0x00, 0x00]))
+
+    def live_colour(self, rgb):
+        """Show a colour now (command 0x14 for every DPI slot). Not saved."""
+        # This command takes each channel inverted: 0 is full, 15 is off.
+        r, g, b = (15 - max(0, min(15, round(int(c) / 17))) for c in rgb)
+        with self._lock, _device_lock:
+            for slot in range(SLOTS):
+                self._feature(bytes([REPORT_ID, CMD_COLOUR, slot << 5 | g, r << 4 | b, 0, 0, 0, 0]))
+
+    def live_end(self):
+        """Go back to the saved lighting."""
+        self.reload()
+
+    def _feature(self, packet):
+        if self._dev is None:
+            raise MouseError("Mouse not connected")
+        try:
+            if self._dev.send_feature_report(packet) < 0:
+                raise OSError("report refused")
+        except (OSError, ValueError) as exc:
+            self.close()
+            raise MouseError(f"Lost the mouse: {exc}") from exc
 
     # ---- settings ---------------------------------------------------------
 
