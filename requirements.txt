@@ -1,2 +1,7 @@
 hidapi
 pywebview
+pystray
+Pillow
+numpy
+soundcard
+mss

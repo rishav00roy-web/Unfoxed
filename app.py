@@ -17,6 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+import desktop
 import evision
 import mouse
 from evision import DeviceError
@@ -272,11 +273,46 @@ def free_port():
         return s.getsockname()[1]
 
 
+def run_window(webview, url, start_hidden):
+    """The app window. Closing it hides it to the tray; Quit in the tray ends the app."""
+    window = webview.create_window(desktop.WINDOW_TITLE, url, width=1160, height=860,
+                                   min_size=(760, 600), background_color="#111213",
+                                   hidden=start_hidden)
+    quitting = threading.Event()
+
+    def on_open():
+        window.show()
+        window.restore()
+
+    def on_quit():
+        quitting.set()
+        if tray:
+            tray.stop()
+        window.destroy()
+
+    tray = desktop.start_tray(str(ROOT / "assets" / "icon.png"), on_open, on_quit)
+
+    def on_closing():
+        if tray and not quitting.is_set():
+            window.hide()
+            return False            # keep running in the tray
+        return True
+
+    window.events.closing += on_closing
+    webview.start()
+    if tray:
+        tray.stop()
+
+
 def main():
     ap = argparse.ArgumentParser(description="Unfoxed")
     ap.add_argument("--serve", action="store_true", help="run the server without opening a window")
     ap.add_argument("--port", type=int, default=0)
+    ap.add_argument("--tray", action="store_true", help="start hidden in the tray")
     args = ap.parse_args()
+
+    if not args.serve and not desktop.claim_single_instance():
+        return 0
 
     port = args.port or free_port()
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
@@ -297,9 +333,7 @@ def main():
                 say(f"Unfoxed running at {url} (close this window to quit)")
                 threading.Event().wait()
             else:
-                webview.create_window("Unfoxed", url, width=1160, height=860,
-                                      min_size=(760, 600), background_color="#111213")
-                webview.start()
+                run_window(webview, url, start_hidden=args.tray)
     except KeyboardInterrupt:
         pass
     finally:
