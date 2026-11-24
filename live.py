@@ -104,6 +104,7 @@ class LiveEngine:
         self._presses = []
         self._levels = [0.0] * 16
         self._mouse_live = False
+        self._mouse_begun = 0.0
         self.load()
 
     # ---- settings ---------------------------------------------------------
@@ -290,9 +291,13 @@ class LiveEngine:
             rgb = vivid(rgb)          # an average of many colours is dull otherwise
         try:
             self.ms.connect()
-            if not self._mouse_live:
+            now = time.monotonic()
+            # Pressing the mouse's lighting button switches it to its next own
+            # effect; taking live mode back every second keeps it following.
+            if not self._mouse_live or now - self._mouse_begun > 1.0:
                 self.ms.live_begin()
                 self._mouse_live = True
+                self._mouse_begun = now
             self.ms.live_colour(rgb)
         except MouseError:
             self._mouse_live = False
