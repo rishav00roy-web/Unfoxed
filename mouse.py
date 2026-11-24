@@ -98,6 +98,8 @@ FUNCTIONS = {
     0x00: "Disabled",
 }
 CODE_MASK = 0x1F
+LIGHT_BUTTON = 5           # the lighting button only ever cycles the lighting
+LIGHT_CYCLE = 0x15
 LEFT_CLICK = 0x01
 
 
@@ -429,6 +431,8 @@ class Mouse:
     def _set_buttons(self, codes):
         if len(codes) != BUTTONS:
             raise ValueError("Expected a function for each of the eight buttons")
+        codes = list(codes)
+        codes[LIGHT_BUTTON] = LIGHT_CYCLE
         old = self.read(ADDR_BUTTONS, 8)
         new = bytearray(old)
         for n, code in enumerate(codes):

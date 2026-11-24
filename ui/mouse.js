@@ -157,6 +157,11 @@ function buildMouse(options) {
     const select = document.createElement('select');
     select.id = `button-${n}`;
     for (const [code, text] of options.functions) select.append(new Option(text, code));
+    if (n === 5) {
+      // The lighting button is kept for changing the lighting.
+      select.disabled = true;
+      select.title = 'The lighting button always changes the lighting.';
+    }
     select.addEventListener('change', () => {
       const before = M.draft.buttons[n];
       M.draft.buttons[n] = Number(select.value);
