@@ -1,20 +1,36 @@
 # Unfoxed
 
-An unofficial, open replacement for the EvoFox keyboard and mouse software, in
-one app. It talks to the devices directly, so the vendor apps do not need to be
-installed.
+One 30 MB app replaces both EvoFox apps for the Ronin keyboard and the Blaze 2
+mouse. Download it, double-click it, done. Nothing to install, no vendor
+software, no account.
+
+I built it because the official apps were painful to use. Unfoxed talks to the keyboard and mouse directly over USB, saves
+everything on the devices themselves, and adds things the vendor apps never
+had: lighting that moves with your music, keys that copy the colours on your
+screen, and a mouse that follows along.
 
 Not affiliated with or endorsed by EvoFox or Amkette.
 
 ## Supported devices
 
-| Device | USB ID | Status |
-|---|---|---|
-| EvoFox Ronin Wireless keyboard (2.4G receiver) | `320F:5055` | Lighting, profiles, per-key colours |
-| EvoFox Blaze 2 mouse | `30FA:1440` | DPI, polling rate, button functions |
+Tested on real hardware:
 
-Other keyboards built on the same Evision chip and "V2" protocol may work, but
-only the Ronin has been tested, and the key layout is the Ronin's.
+| Device | USB ID | What works |
+|---|---|---|
+| EvoFox Ronin keyboard | `320F:5055` | 18 lighting effects, per-key colours, 3 profiles, key and knob remap, live effects |
+| EvoFox Blaze 2 mouse | `30FA:1440` | DPI (6 slots, 200 to 12800), polling rate, 8 buttons, 8 lighting effects, colours, brightness, live effects |
+
+Same chip and same USB ID, so they will probably work, but nobody has tested
+them yet (if you own one, please open an issue and tell me):
+
+| Device | USB ID | Note |
+|---|---|---|
+| EvoFox Ronin, wired version | `320F:5055` | Should match the tested keyboard |
+| Kreo Hive keyboard | `320F:5055` | Lighting likely works; the on-screen key layout is the Ronin's |
+| Anko gaming mouse (Kmart) | `30FA:1440` | Same Instant chip as the Blaze 2 |
+
+Other Evision keyboards and Instant mice use different USB IDs, so Unfoxed
+will not see them yet.
 
 ## What it does
 
