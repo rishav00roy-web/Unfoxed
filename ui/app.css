@@ -883,3 +883,9 @@ select {
   border: 1px solid var(--line-strong);
   border-radius: var(--r-full);
 }
+
+.button-row[data-hit] {
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 2px var(--accent);
+}

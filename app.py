@@ -42,6 +42,7 @@ REMAP_SLOTS = {key["slot"] for key in LAYOUT["keys"]} | {extra["slot"] for extra
 
 kb = evision.Keyboard()
 ms = mouse.Mouse()
+mouse_events = mouse.EventListener()
 engine = live.LiveEngine(kb, ms, LAYOUT)
 MOUSE_OPTIONS = {
     "dpi": mouse.DPI_VALUES,
@@ -76,6 +77,9 @@ def read_mouse():
     except MouseError as exc:
         state = {"connected": False, "error": str(exc)}
     state["options"] = MOUSE_OPTIONS
+    state["dpi_presses"] = mouse_events.dpi_presses
+    if mouse_events.slot is not None and state.get("connected"):
+        state["current"] = mouse_events.slot      # memory lags behind the button
     return state
 
 

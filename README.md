@@ -39,8 +39,23 @@ Mouse:
 - **Buttons**: give each of the eight buttons a function (clicks, back and
   forward, DPI up, down and cycle, double click, rapid fire, lighting cycle,
   or disabled)
-- **Lighting**: eight effects (solid, breathing, flowing, comet, neon and more)
-  and their speed
+- **Lighting**: eight effects (solid, breathing, flowing, comet, neon and more),
+  speed, brightness, the colours the cycling effects use, and a colour per DPI
+  slot
+- **Button test**: press a button and the app shows which one it is
+
+Live effects (keyboard, and the mouse if you want it to follow):
+
+- **Solid + ripple**: a steady colour with a ring spreading from each key you press
+- **Music**: bars that move with whatever your PC is playing
+- **Screen colours**: the keys take the colours on your screen
+- These run while the app is open, including when it sits in the tray, and
+  nothing is saved to the devices, so there is no wear on their memory
+
+App:
+
+- Opens once: starting it again brings the open window forward
+- Closing the window keeps it in the tray; it can start with Windows
 
 Everything is stored on the devices, so settings stay after the app is closed.
 

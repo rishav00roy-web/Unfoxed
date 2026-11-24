@@ -449,3 +449,49 @@ class Mouse:
         for addr in mirrors:
             self.write(addr, new)
         return True
+
+
+class EventListener:
+    """Reads the mouse's event channel (usage page 0xFF00, report 6). A DPI
+    button press sends 06 F8 <slot>, with bit 7 set while the button is down;
+    the slot saved in memory only catches up later."""
+
+    def __init__(self):
+        self.dpi_presses = 0
+        self.slot = None
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, name="mouse-events", daemon=True)
+        self._thread.start()
+
+    def _run(self):
+        dev = None
+        while not self._stop.is_set():
+            if dev is None:
+                path = next((d["path"] for d in hid.enumerate(VID, PID) if d["usage_page"] == 0xFF00), None)
+                if path is None:
+                    time.sleep(2)
+                    continue
+                try:
+                    dev = hid.device()
+                    dev.open_path(path)
+                    dev.set_nonblocking(1)
+                except OSError:
+                    dev = None
+                    time.sleep(2)
+                    continue
+            try:
+                report = dev.read(16)
+            except (OSError, ValueError):
+                dev = None
+                continue
+            if not report:
+                time.sleep(0.02)
+                continue
+            if len(report) >= 3 and report[0] == 6 and report[1] == 0xF8 and report[2] & 0x80:
+                self.slot = report[2] & 7
+                self.dpi_presses += 1
+        if dev is not None:
+            dev.close()
+
+    def stop(self):
+        self._stop.set()

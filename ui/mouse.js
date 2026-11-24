@@ -300,3 +300,76 @@ setInterval(() => {
   // Follow the mouse (its DPI button changes the slot), unless edits are waiting.
   if (activeDevice === 'mouse' && !document.hidden && !mouseDirty()) loadMouse();
 }, 4000);
+
+/* ---- button test ---------------------------------------------------------
+   Press a mouse button and the diagram and the list show which one it is.
+   Clicks come from the browser; the DPI and lighting buttons are spotted by
+   the change they make on the mouse. */
+
+const BROWSER_BUTTON_CODE = { 0: 1, 1: 3, 2: 2, 3: 4, 4: 5 };
+const DPI_CODES = [0x06, 0x0b, 0x0c];
+const LIGHT_CODE = 0x15;
+const T = { on: false, timer: 0, last: null, flash: 0 };
+
+function flashButtons(positions, what) {
+  clearTimeout(T.flash);
+  document.querySelectorAll('.button-row').forEach((row, n) => {
+    row.toggleAttribute('data-hit', positions.includes(n));
+  });
+  document.querySelectorAll('.m-part').forEach((part) => {
+    part.toggleAttribute('data-on', positions.includes(Number(part.dataset.n)));
+  });
+  $('button-test-note').textContent = positions.length
+    ? `You pressed: ${positions.map((n) => BUTTON_NAMES[n]).join(' or ')} (${what}).`
+    : `You pressed a button set to ${what}, but no button in the list has that now.`;
+  T.flash = setTimeout(() => {
+    document.querySelectorAll('.button-row').forEach((row) => row.removeAttribute('data-hit'));
+    markPart(-1);
+  }, 1200);
+}
+
+function positionsWith(codes) {
+  const buttons = (M.saved && M.saved.buttons) || [];
+  return buttons.map((code, n) => (codes.includes(code) ? n : -1)).filter((n) => n >= 0);
+}
+
+async function watchMouseButtons() {
+  if (!T.on) return;
+  try {
+    const st = await api('/api/mouse');
+    if (T.last) {
+      if (st.dpi_presses !== T.last.dpi_presses) flashButtons(positionsWith(DPI_CODES), 'DPI');
+      else if (st.light_effect !== T.last.light_effect) flashButtons(positionsWith([LIGHT_CODE]), 'lighting cycle');
+    }
+    T.last = st;
+  } catch { /* the mouse may be busy; try again next time */ }
+  T.timer = setTimeout(watchMouseButtons, 600);
+}
+
+function setButtonTest(on) {
+  T.on = on;
+  T.last = null;
+  clearTimeout(T.timer);
+  $('button-test').setAttribute('aria-pressed', String(on));
+  $('button-test').textContent = on ? 'Stop testing' : 'Test buttons';
+  $('button-test-note').textContent = on
+    ? 'Press any mouse button. Clicks are not passed on while testing.'
+    : 'Not sure which button is which? Turn on Test buttons and press them.';
+  if (on) watchMouseButtons();
+}
+
+$('button-test').addEventListener('click', () => setButtonTest(!T.on));
+
+window.addEventListener('mousedown', (e) => {
+  if (!T.on || (e.target instanceof Element && e.target.closest('#button-test'))) return;
+  const code = BROWSER_BUTTON_CODE[e.button];
+  if (code === undefined) return;
+  e.preventDefault();
+  const names = { 1: 'left click', 2: 'right click', 3: 'middle click', 4: 'back', 5: 'forward' };
+  flashButtons(positionsWith([code]), names[code]);
+}, true);
+for (const type of ['contextmenu', 'auxclick', 'mouseup']) {
+  window.addEventListener(type, (e) => {
+    if (T.on && (type === 'contextmenu' || e.button >= 2)) e.preventDefault();
+  }, true);
+}
