@@ -234,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
                 kb.set_keys(kb.get_profile(), clean_keys(body))
                 return self._send(200, read_keymap())
             if self.path == "/api/live":
-                changes = {k: body[k] for k in ("effect", "base", "accent", "rainbow", "mouse_follows", "brightness") if k in body}
+                changes = {k: body[k] for k in ("effect", "base", "accent", "rainbow", "mouse_follows", "brightness", "vivid") if k in body}
                 for key in ("base", "accent"):
                     if key in changes:
                         changes[key] = [int(c) & 0xFF for c in changes[key][:3]]

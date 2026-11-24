@@ -34,6 +34,7 @@ DEFAULTS = {
     "effect": None,
     "base": [30, 70, 255],
     "brightness": 100,
+    "vivid": True,
     "accent": [255, 140, 40],
     "rainbow": False,
     "mouse_follows": False,
@@ -66,6 +67,20 @@ def hue(h):
     f = h - i
     q, t = int(255 * (1 - f)), int(255 * f)
     return [(255, t, 0), (q, 255, 0), (0, 255, t), (0, q, 255), (t, 0, 255), (255, 0, q)][i % 6]
+
+
+def vivid(rgb):
+    """Richer colour at the same brightness. LEDs make mixed and averaged
+    colours look washed out, so push the channels apart, then apply a curve
+    that deepens the weaker channels, and scale back to the original peak."""
+    peak = max(rgb)
+    if peak == 0:
+        return rgb
+    grey = sum(rgb) / 3
+    spread = [max(0.0, min(255.0, grey + (c - grey) * 1.6)) for c in rgb]
+    curved = [(c / 255) ** 1.8 for c in spread]
+    top = max(curved) or 1
+    return [int(min(255, c / top * peak)) for c in curved]
 
 
 def mix(a, b, k):
@@ -175,6 +190,8 @@ class LiveEngine:
                     colours = self._screen(screen)
 
                 scale = max(0, min(100, int(self.settings["brightness"]))) / 100
+                if self.settings["vivid"]:
+                    colours = [vivid(rgb) for rgb in colours]
                 colours = [[int(c * scale) for c in rgb] for rgb in colours]
                 frame = [[0, 0, 0] for _ in range(self.slots)]
                 for key, rgb in zip(self.keys, colours):
@@ -269,6 +286,8 @@ class LiveEngine:
         avg = [sum(c[i] for c in colours) // n for i in range(3)]
         peak = max(colours, key=lambda c: sum(c)) if colours else avg
         rgb = peak if self.settings["effect"] == "ripple" else avg
+        if self.settings["vivid"]:
+            rgb = vivid(rgb)          # an average of many colours is dull otherwise
         try:
             self.ms.connect()
             if not self._mouse_live:

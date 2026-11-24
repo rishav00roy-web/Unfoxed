@@ -28,6 +28,7 @@ function buildLive() {
   $('live-rainbow').addEventListener('change', (e) => sendLive({ rainbow: e.target.checked }));
   $('live-brightness').addEventListener('input', (e) => { $('live-brightness-out').textContent = `${e.target.value}%`; });
   $('live-brightness').addEventListener('change', (e) => sendLive({ brightness: Number(e.target.value) }));
+  $('live-vivid').addEventListener('change', (e) => sendLive({ vivid: e.target.checked }));
   $('live-mouse').addEventListener('change', (e) => sendLive({ mouse_follows: e.target.checked }));
 }
 
@@ -43,6 +44,7 @@ function renderLive() {
   $('live-accent').value = toHex(st.accent);
   $('live-rainbow').checked = st.rainbow;
   $('live-mouse').checked = st.mouse_follows;
+  $('live-vivid').checked = st.vivid;
   $('live-brightness').value = st.brightness;
   $('live-brightness-out').textContent = `${st.brightness}%`;
   $('live-colours').hidden = st.effect === 'screen' || !st.effect;
