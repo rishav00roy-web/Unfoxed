@@ -85,6 +85,7 @@ def start_tray(icon_path, on_open, on_quit):
 
     def toggle_start(icon, item):
         set_start_with_windows(not starts_with_windows())
+        icon.update_menu()          # Windows keeps the old tick until the menu is rebuilt
 
     menu = pystray.Menu(
         pystray.MenuItem("Open Unfoxed", lambda icon, item: on_open(), default=True),

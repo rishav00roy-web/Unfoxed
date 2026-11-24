@@ -366,6 +366,16 @@ window.addEventListener('mousedown', (e) => {
   if (code === undefined) return;
   e.preventDefault();
   const names = { 1: 'left click', 2: 'right click', 3: 'middle click', 4: 'back', 5: 'forward' };
+  if (code === 1) {
+    // Rapid fire and double click arrive as left clicks too, so the browser
+    // cannot tell those buttons from the left button.
+    const lookalikes = positionsWith([0x08, 0x09]);
+    const what = lookalikes.length
+      ? 'left click; buttons set to Rapid fire or Double click also send left clicks'
+      : 'left click';
+    flashButtons(positionsWith([1, 0x08, 0x09]), what);
+    return;
+  }
   flashButtons(positionsWith([code]), names[code]);
 }, true);
 for (const type of ['contextmenu', 'auxclick', 'mouseup']) {
